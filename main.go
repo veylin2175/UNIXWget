@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-type Downloader struct {
+type downloader struct {
 	baseURL      *url.URL
 	visitedURLs  map[string]bool
 	visitedMutex sync.Mutex
@@ -28,7 +28,7 @@ type Downloader struct {
 	semaphore    chan struct{}
 }
 
-func NewDownloader(startURL string, downloadDir string, maxDepth int, maxConcurrent int) (*Downloader, error) {
+func newDownloader(startURL string, downloadDir string, maxDepth int, maxConcurrent int) (*downloader, error) {
 	parsedURL, err := url.Parse(startURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %v", err)
@@ -43,7 +43,7 @@ func NewDownloader(startURL string, downloadDir string, maxDepth int, maxConcurr
 		return nil, fmt.Errorf("failed to create download directory: %v", err)
 	}
 
-	return &Downloader{
+	return &downloader{
 		baseURL:     parsedURL,
 		visitedURLs: make(map[string]bool),
 		downloadDir: downloadDir,
@@ -55,11 +55,11 @@ func NewDownloader(startURL string, downloadDir string, maxDepth int, maxConcurr
 	}, nil
 }
 
-func (d *Downloader) Download() error {
+func (d *downloader) Download() error {
 	return d.downloadURL(d.baseURL.String(), 0)
 }
 
-func (d *Downloader) downloadURL(rawURL string, depth int) error {
+func (d *downloader) downloadURL(rawURL string, depth int) error {
 	if depth > d.maxDepth {
 		return nil
 	}
@@ -135,7 +135,7 @@ func (d *Downloader) downloadURL(rawURL string, depth int) error {
 	return nil
 }
 
-func (d *Downloader) getSavePath(u *url.URL) string {
+func (d *downloader) getSavePath(u *url.URL) string {
 	// Удаляем начальный слэш
 	path := strings.TrimPrefix(u.Path, "/")
 
@@ -155,7 +155,7 @@ func (d *Downloader) getSavePath(u *url.URL) string {
 	return fullPath
 }
 
-func (d *Downloader) processHTML(content []byte, baseURL *url.URL, depth int) {
+func (d *downloader) processHTML(content []byte, baseURL *url.URL, depth int) {
 	doc, err := html.Parse(bytes.NewReader(content))
 	if err != nil {
 		log.Printf("Failed to parse HTML: %v", err)
@@ -219,7 +219,7 @@ func (d *Downloader) processHTML(content []byte, baseURL *url.URL, depth int) {
 	processNode(doc)
 }
 
-func (d *Downloader) Wait() {
+func (d *downloader) Wait() {
 	d.wg.Wait()
 }
 
@@ -245,7 +245,7 @@ func main() {
 		downloadDir = os.Args[3]
 	}
 
-	downloader, err := NewDownloader(startURL, downloadDir, depth, 10)
+	downloader, err := newDownloader(startURL, downloadDir, depth, 10)
 	if err != nil {
 		log.Fatal(err)
 	}
